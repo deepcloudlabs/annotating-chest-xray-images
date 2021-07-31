@@ -9,8 +9,8 @@ Open the backend project implemented in Python using Flask and PyMongo and run t
 Make sure that the service is up and running:
 ![](annotation-toolbox-fig02.png?raw=true)
 
-Open the frontend project in WebStorm:
+Open the frontend project in WebStorm and open the **index.html** in a web browser such as Chrome:
 ![](annotation-toolbox-fig03.png?raw=true)
 
-Open the index.html in a web browser and click the button "**Load random X-Ray Image**":
+ Click the button "**Load Random X-Ray Image**":
 ![](annotation-toolbox-fig04.png?raw=true)
