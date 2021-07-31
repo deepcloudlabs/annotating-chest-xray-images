@@ -1,0 +1,6 @@
+curl -X POST "localhost:4400/x-ray/images" -d @data1.json -H "Content-type: application/json"
+curl -X POST "localhost:4400/x-ray/images" -d @data2.json -H "Content-type: application/json"
+curl -X POST "localhost:4400/x-ray/images" -d @data3.json -H "Content-type: application/json"
+curl -X POST "localhost:4400/x-ray/images" -d @data4.json -H "Content-type: application/json"
+curl -X POST "localhost:4400/x-ray/images" -d @data5.json -H "Content-type: application/json"
+curl -X POST "localhost:4400/x-ray/images" -d @data6.json -H "Content-type: application/json"

@@ -1,0 +1,7 @@
+eventlet
+Flask
+flask-cors
+pymongo
+requests
+schedule
+waitress
