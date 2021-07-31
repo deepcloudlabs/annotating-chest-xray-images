@@ -4,7 +4,7 @@ Annotating Chest XRAY Images and Evaluating the annotation
 Run the script **post_xray_images.bat** to populate the mongodb.
 
 Open the backend project implemented in Python using Flask and PyMongo:
-![annotation-toolbox-fig01.png]()
+![](annotation-toolbox-fig01.png?raw=true)
 
 Run the backend service:
 ![annotation-toolbox-fig02.png]()
