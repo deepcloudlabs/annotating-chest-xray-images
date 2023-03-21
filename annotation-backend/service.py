@@ -1,8 +1,9 @@
-from shapely.geometry import Polygon
 import ast
 from flask import Flask, jsonify, request, Response
 from pymongo import MongoClient
 from waitress import serve
+
+from util.iou import compute_iou
 from util.utility import extract_command_from_request as extract
 from bson.json_util import dumps
 from flask_cors import CORS
@@ -39,9 +40,8 @@ def upload_xray_chest_image():
     :return: return {"status" : "success"} if it is successful
     """
     xray_images.insert_one(command)
-    return jsonify({"status": "success"}) \
- \
- \
+    return jsonify({"status": "success"})
+
 
 @app.route("/x-ray/evaluate", methods=["POST"])
 def evaluate_annotation():
@@ -49,39 +49,26 @@ def evaluate_annotation():
     Returns inserts an Intersection over Union value
     :return: return {"status" : "success"} if it is successful
     """
-    # print(request.json)
     data = request.json
-
+    print(data)
     annotation_dict = ast.literal_eval(data["annotation"])
     print(annotation_dict["features"])
 
+    anomaly0 = annotation_dict["features"][0]["properties"]["anomaly"]
+    anomaly1 = annotation_dict["features"][1]["properties"]["anomaly"]
 
-    anomaly0=annotation_dict["features"][0]["properties"]["anomaly"]
-    anomaly1=annotation_dict["features"][1]["properties"]["anomaly"]
+    if anomaly0 == anomaly1:
+        poly_shape1 = annotation_dict["features"][0]['geometry']["coordinates"]  # picture coordinates
+        poly_shape2 = annotation_dict["features"][1]['geometry']["coordinates"]  # annotated part
+        print("Anomaly coordinates", poly_shape1[0])
+        print("Annotated coordinates", poly_shape2[0])
 
-    if anomaly0==anomaly1:
-        poly_shape1=annotation_dict["features"][0]['geometry']["coordinates"] #picture coordinates
-        poly_shape2=annotation_dict["features"][1]['geometry']["coordinates"] #annotated part
-        print("Anomaly coordinates",poly_shape1[0])
-        print("Annotated coordinates",poly_shape2[0])
+        result = compute_iou(poly_shape1[0], poly_shape2[0])
+        print('IoU is', result)
 
-
-        result= get_iou(poly_shape1[0], poly_shape2[0])
-        print('IoU is',result)
-
-
-        return jsonify({"status": "success","iou":result})
+        return jsonify({"status": "success", "iou": result})
 
     return jsonify({"status": "unsuccess", "iou": "could not be calculated"})
-
-
-def get_iou(poly_shape1, poly_shape2):
-    shape1 = Polygon(poly_shape1)
-    shape2 = Polygon(poly_shape2)
-
-    polygon_intersection = shape1.intersection(shape2).area
-    polygon_union = shape1.area + shape2.area - polygon_intersection
-    return polygon_intersection / polygon_union
 
 
 if __name__ == "__main__":
