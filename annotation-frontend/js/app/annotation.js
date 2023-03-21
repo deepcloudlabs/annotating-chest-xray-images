@@ -218,6 +218,20 @@ class AnnotationViewModel {
 
     }
     evaluate=async()=>{
+        for (let label of this.anomalies) {
+            if (this.anomalyLayers[label]) {
+                for (let layer of this.anomalyLayers[label]) {
+                    this.drawnItems.addLayer(layer);
+                    layer.setStyle({
+                        weight: 8,
+                        color: this.anomalyColors[label],
+                        fillColor: this.anomalyColors[label]
+                    });
+                    layer.bindTooltip(label, {permanent: false, offset: [0, 0]});
+                }
+            }
+        }
+
         let geoJson = JSON.stringify(this.drawnItems.toGeoJSON());
             fetch(`${AppConfig.BASE_URL}/x-ray/evaluate`, {
             method: "POST",
