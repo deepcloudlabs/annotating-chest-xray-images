@@ -217,6 +217,31 @@ class AnnotationViewModel {
         }
 
     }
+    evaluate=async()=>{
+        let geoJson = JSON.stringify(this.drawnItems.toGeoJSON());
+            fetch(`${AppConfig.BASE_URL}/x-ray/evaluate`, {
+            method: "POST",
+            headers:{ "Content-Type":"application/json",
+                       "Accept":"application/json"
+            },
+            body: JSON.stringify({
+                user_id: 1,
+                input_id:42,
+                annotation: geoJson
+            })
+        })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status.toString() === 'fail') {
+                    toastr.error(res.reason);
+                } else {
+                    toastr.success(`Annotations are successfully saved.`);
+                }
+            })
+            .catch((error) => {
+                toastr.error(error);
+            });
+    }
 
     saveAnnotations = async () => {
         for (let label of this.anomalies) {
