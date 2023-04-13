@@ -35,29 +35,10 @@ class AnnotationViewModel {
             filename: ko.observable("")
         });
 
-
-
         this.anomalyFeedback = ko.observable("NO_FINDING");
-        this.filename = ko.observable("");
-        this.croppedFileName = ko.computed(() => {
-            if (this.filename().length > 32) {
-                let length = this.filename().length;
-                return this.filename().substring(0, 16).concat("...").concat(this.filename().substring(length - 16));
-            }
-            return this.filename();
-        });
-
-        // region feedback
-        this.feedback = {}
-        this.feedback.anomalies = ko.observableArray([]);
-        this.feedback.notes = ko.observable("");
-        // endregion
-
-
+        this.iou = ko.observable("Not available");
         this.anomalyLayers = {}
-
         this.anomaly = ko.observable(this.anomalies[1]);
-
         this.anomaly.subscribe(anomaly => {
             for (let layer of this.drawnItems.getLayers()) {
                 this.drawnItems.removeLayer(layer)
@@ -100,13 +81,6 @@ class AnnotationViewModel {
         }, this,"beforeChange");
 
         this.isXrayLoaded = ko.observable(false);
-        this.file_upload = {};
-
-        this.imageLoaded = ko.observable(false);
-        this.receivedCommands = [];
-
-        this.fileData().dataUrl.subscribe(this.loadFile)
-
     }
 
     zoomElement = async (item, event) => {
@@ -130,13 +104,6 @@ class AnnotationViewModel {
                 })
             });
     }
-    showAnnotationResult=async()=>{
-            console.log("hi");
-            fetch(`${AppConfig.BASE_URL}/x-ray/showAnnotationResult` )
-            .then(res => res.json())
-            .then(res=>console.log(res.result()) )
-            }
-
 
     loadFile = async (newImage) => {
 
@@ -266,13 +233,10 @@ class AnnotationViewModel {
             console.log(res);
                 if (res.status.toString() === 'fail') {
                     toastr.error(res.reason);}
-
                 else if (res.status.toString() === 'success'){
-                    toastr.success(`Annotations are successfully saved and IoU is ${res.reason}.`);
-                    localStorage.setItem("IoU",ko.toJSON(this));
-
+                    toastr.success(`Annotations are successfully saved and IoU is ${res.iou}.`);
+                    this.iou(res.iou);
                 }
-
             })
             .catch((error) => {
                 toastr.error(error);
@@ -377,24 +341,4 @@ class AnnotationViewModel {
     };
 
     dragover = e => e.preventDefault();
-}
-
-
-
-//const btn = document.getElementById('hiddenIoU');
-//btn.style.visibility='hidden' ;
-//
-//function show(){
-//        document.getElementById("hiddenIoU").style.visibility = "visible";
-//   }
-
-
-function myFunction() {
-      const element = document.getElementById("anomalies");
-      element.remove();
-      const element2 = document.getElementById("picture");
-      element2.remove();
-
-
-
 }

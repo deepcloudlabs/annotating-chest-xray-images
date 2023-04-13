@@ -3,46 +3,212 @@
 
 <head>
     <title>Annotation Toolbox</title>
-    <style type="text/css">
+    <style>
         @import url("css/bootstrap.min.css");
         @import url("css/leaflet.css");
         @import url("css/leaflet.draw.css");
         @import url("css/toastr.css");
+        @import url("css/app.css");
     </style>
 </head>
 
 <body>
 
-<div class="container">
-    <div class="card">
-        <div class="card-header">
-            <div class="card-title"><h3>Chest X-Ray Annotation Tool</h3></div>
+<div class="wrapper">
+    <nav id="sidebar" class="sidebar js-sidebar">
+        <div class="sidebar-content js-simplebar">
+            <a class="sidebar-brand" href="index.html">
+                <span class="align-middle">X-Ray Annotation Tool</span>
+            </a>
+            <ul class="sidebar-nav">
+                <li class="sidebar-header">
+                    X-Ray
+                </li>
+                <li class="sidebar-item active">
+                    <a class="sidebar-link" href="index.html">
+                        <i class="align-middle" data-feather="sliders"></i> <span class="align-middle">Annotate</span>
+                    </a>
+                </li>
+            </ul>
+
         </div>
+    </nav>
+    <div class="main">
+        <nav class="navbar navbar-expand navbar-light navbar-bg">
+            <a class="sidebar-toggle js-sidebar-toggle">
+                <i class="hamburger align-self-center"></i>
+            </a>
+            <div class="navbar-collapse collapse">
+                <ul class="navbar-nav navbar-align">
+                    <li class="nav-item dropdown">
+                        <a class="nav-icon dropdown-toggle" href="#" id="alertsDropdown" data-bs-toggle="dropdown">
+                            <div class="position-relative">
+                                <i class="align-middle" data-feather="bell"></i>
+                                <span class="indicator">2</span>
+                            </div>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end py-0"
+                             aria-labelledby="alertsDropdown">
+                            <div class="dropdown-menu-header">
+                                2 New Notifications
+                            </div>
+                            <div class="list-group">
+                                <a href="#" class="list-group-item">
+                                    <div class="row g-0 align-items-center">
+                                        <div class="col-2">
+                                            <i class="text-danger" data-feather="alert-circle"></i>
+                                        </div>
+                                        <div class="col-10">
+                                            <div class="text-dark">Update completed</div>
+                                            <div class="text-muted small mt-1">Restart server 12 to complete the
+                                                update.
+                                            </div>
+                                            <div class="text-muted small mt-1">30m ago</div>
+                                        </div>
+                                    </div>
+                                </a>
+                                <a href="#" class="list-group-item">
+                                    <div class="row g-0 align-items-center">
+                                        <div class="col-2">
+                                            <i class="text-warning" data-feather="bell"></i>
+                                        </div>
+                                        <div class="col-10">
+                                            <div class="text-dark">Lorem ipsum</div>
+                                            <div class="text-muted small mt-1">Aliquam ex eros, imperdiet vulputate
+                                                hendrerit et.
+                                            </div>
+                                            <div class="text-muted small mt-1">2h ago</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="dropdown-menu-footer">
+                                <a href="#" class="text-muted">Show all notifications</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-icon dropdown-toggle" href="#" id="messagesDropdown" data-bs-toggle="dropdown">
+                            <div class="position-relative">
+                                <i class="align-middle" data-feather="message-square"></i>
+                            </div>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end py-0"
+                             aria-labelledby="messagesDropdown">
+                            <div class="dropdown-menu-header">
+                                <div class="position-relative">
+                                    1 New Message
+                                </div>
+                            </div>
+                            <div class="list-group">
+                                <a href="#" class="list-group-item">
+                                    <div class="row g-0 align-items-center">
+                                        <div class="col-2">
+                                            <img src="images/avatars/avatar2.jpg"
+                                                 class="avatar img-fluid rounded-circle"
+                                                 alt="Kate Austen">
+                                        </div>
+                                        <div class="col-10 ps-2">
+                                            <div class="text-dark">Kate Austen</div>
+                                            <div class="text-muted small mt-1">Curabitur ligula sapien euismod vitae.
+                                            </div>
+                                            <div class="text-muted small mt-1">2h ago</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="dropdown-menu-footer">
+                                <a href="#" class="text-muted">Show all messages</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-icon dropdown-toggle d-inline-block d-sm-none" href="#" data-bs-toggle="dropdown">
+                            <i class="align-middle" data-feather="settings"></i>
+                        </a>
 
+                        <a class="nav-link dropdown-toggle d-none d-sm-inline-block" href="#" data-bs-toggle="dropdown">
+                            <img src="images/avatars/avatar1.jpg" class="avatar img-fluid rounded me-1"
+                                 alt="Jack Shephard"/>
+                            <span class="text-dark">Jack Shephard</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a class="dropdown-item" href="pages-profile.html"><i class="align-middle me-1"
+                                                                                  data-feather="user"></i> Profile</a>
+                            <a class="dropdown-item" href="#"><i class="align-middle me-1" data-feather="pie-chart"></i>
+                                Analytics</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="index.html"><i class="align-middle me-1"
+                                                                          data-feather="settings"></i> Settings &
+                                Privacy</a>
+                            <a class="dropdown-item" href="#"><i class="align-middle me-1"
+                                                                 data-feather="help-circle"></i> Help Center</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#">Log out</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        <main class="content">
+            <div class="container-fluid p-0">
 
-        <div class="card-body">
+                <h1 class="h3 mb-3"><strong>Analytics</strong> Dashboard</h1>
 
-            <div class="form-group">
-                <button class="btn btn-success" data-bind="click: loadRandomXrayImage">Load Random X-Ray Image </button>
+                <div class="row">
+                    <div class="col-xl-6 col-xxl-5 d-flex">
+                        <div class="w-100">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col mt-0">
+                                                    <h5 class="card-title">Intersection over Union Score</h5>
+                                                </div>
 
-                <button  class="btn btn-warning" data-bind="click: evaluate">Save and Evaluate My Annotations</button>
+                                                <div class="col-auto">
+                                                    <div class="stat text-primary">
+                                                        <i class="align-middle" data-feather="eye"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <h1 class="mt-1 mb-3" data-bind="text: iou"></h1>
+                                            <div class="mb-0">
+                                                <span class="text-danger"> <i class="mdi mdi-arrow-bottom-right"></i> -3.65% </span>
+                                                <span class="text-muted">Since last week</span>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                <button class="btn btn-danger" onclick="myFunction()" data-bind="click: showAnnotationResult">Show Annotation Result</button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-6 col-xxl-7">
+                    <div id="anomalies" class="form-group">
+                        <select class="form-control" data-bind="options: anomalies,value: anomaly"></select>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-success" data-bind="click: loadRandomXrayImage">Load Random X-Ray Image
+                        </button>
+
+                        <button class="btn btn-warning" data-bind="click: evaluate">Save and Evaluate My Annotations
+                        </button>
+                    </div>
+                    <div id="picture" class="form-group">
+                        <div id="inputImageDiv"
+                             style="margin-left: auto; margin-right: auto;"></div>
+                    </div>
+                </div>
             </div>
 
-            <div id="anomalies" class="form-group">
-                <select class="form-control" data-bind="options: anomalies,value: anomaly"></select>
-            </div>
-
-            <div  id="picture" class="form-group">
-                <div id="inputImageDiv"
-                     style="margin-left: auto; margin-right: auto;"></div>
-            </div>
-
-
-</div>
+        </main>
     </div>
-        </div>
+</div>
 
 
 <!-- jQuery first, then Bootstrap JS -->
@@ -50,6 +216,7 @@
 <script src="js/lib/bootstrap/bootstrap.min.js"></script>
 
 <!-- Other JS -->
+<script type="text/javascript" src="js/app/admin.js"></script>
 <script type="text/javascript" src="js/lib/toastr/toastr.min.js"></script>
 <script type="text/javascript" src="js/lib/leaflet/leaflet.js"></script>
 <script type="text/javascript" src="js/lib/leaflet/leaflet.draw.js"></script>
