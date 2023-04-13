@@ -5,7 +5,9 @@
 class AnnotationViewModel {
     constructor() {
         //region labels
-        this.anomalies = ["ATELECTASIS", "CARDIOMEGALY", "CONSOLIDATION", "EDEMA", "EFFUSION", "EMPHYSEMA", "FIBROSIS", "HERNIA", "INFILTRATION", "LESION", "LUNG_OPACITY", "MASS", "NODULE", "PLEURAL_EFFUSION", "PLEURAL_THICKENING", "PNEUMONIA", "PNEUMOTHORAX", "SUPPORT_DEVICES"]
+        this.anomalies = ["ATELECTASIS", "CARDIOMEGALY", "CONSOLIDATION", "EDEMA", "EFFUSION", "EMPHYSEMA",
+        "FIBROSIS", "HERNIA", "INFILTRATION", "LESION", "LUNG_OPACITY", "MASS", "NODULE", "PLEURAL_EFFUSION",
+        "PLEURAL_THICKENING", "PNEUMONIA", "PNEUMOTHORAX", "SUPPORT_DEVICES"]
         this.anomaliesWithAll = ["ALL", ...this.anomalies]
         this.anomalyColors = {
             "ATELECTASIS": "red",
@@ -32,6 +34,9 @@ class AnnotationViewModel {
             dataUrl: ko.observable(AppConfig.NO_IMAGE),
             filename: ko.observable("")
         });
+
+
+
         this.anomalyFeedback = ko.observable("NO_FINDING");
         this.filename = ko.observable("");
         this.croppedFileName = ko.computed(() => {
@@ -92,7 +97,7 @@ class AnnotationViewModel {
                 this.anomalyLayers[this.anomaly()].push(layer);
                 this.drawnItems.removeLayer(layer)
             }
-        }, this, "beforeChange");
+        }, this,"beforeChange");
 
         this.isXrayLoaded = ko.observable(false);
         this.file_upload = {};
@@ -113,15 +118,25 @@ class AnnotationViewModel {
     }
 
     loadRandomXrayImage = async () => {
+
         fetch(`${AppConfig.BASE_URL}/x-ray/images`)
+
             .then(res => res.json())
             .then(res => {
                 res.image = toSrcImage(res.image)
-                this.loadFile(res.image).then(next => {
+                this.loadFile(res.image)
+                .then(next => {
                     this.retrieveAnnotations(res.annotation)
                 })
             });
     }
+    showAnnotationResult=async()=>{
+            console.log("hi");
+            fetch(`${AppConfig.BASE_URL}/x-ray/showAnnotationResult` )
+            .then(res => res.json())
+            .then(res=>console.log(res.result()) )
+            }
+
 
     loadFile = async (newImage) => {
 
@@ -176,6 +191,7 @@ class AnnotationViewModel {
             props.anomaly = this.anomaly();
             this.drawnItems.addLayer(e.layer);
         });
+
         let imageBounds = [[0, 0], [dims.width, -dims.height]];
         L.imageOverlay(newImage, imageBounds).addTo(this.map);
         this.map.fitBounds(imageBounds);
@@ -233,7 +249,8 @@ class AnnotationViewModel {
         }
 
         let geoJson = JSON.stringify(this.drawnItems.toGeoJSON());
-            fetch(`${AppConfig.BASE_URL}/x-ray/evaluate`, {
+            fetch(`${AppConfig.BASE_URL}/x-ray/evaluate`,
+            {
             method: "POST",
             headers:{ "Content-Type":"application/json",
                        "Accept":"application/json"
@@ -246,16 +263,22 @@ class AnnotationViewModel {
         })
             .then(res => res.json())
             .then(res => {
+            console.log(res);
                 if (res.status.toString() === 'fail') {
-                    toastr.error(res.reason);
-                } else {
-                    toastr.success(`Annotations are successfully saved.`);
+                    toastr.error(res.reason);}
+
+                else if (res.status.toString() === 'success'){
+                    toastr.success(`Annotations are successfully saved and IoU is ${res.reason}.`);
+                    localStorage.setItem("IoU",ko.toJSON(this));
+
                 }
+
             })
             .catch((error) => {
                 toastr.error(error);
             });
     }
+
 
     saveAnnotations = async () => {
         for (let label of this.anomalies) {
@@ -354,4 +377,24 @@ class AnnotationViewModel {
     };
 
     dragover = e => e.preventDefault();
+}
+
+
+
+//const btn = document.getElementById('hiddenIoU');
+//btn.style.visibility='hidden' ;
+//
+//function show(){
+//        document.getElementById("hiddenIoU").style.visibility = "visible";
+//   }
+
+
+function myFunction() {
+      const element = document.getElementById("anomalies");
+      element.remove();
+      const element2 = document.getElementById("picture");
+      element2.remove();
+
+
+
 }

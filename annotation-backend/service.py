@@ -46,9 +46,9 @@ def upload_xray_chest_image():
 @app.route("/x-ray/evaluate", methods=["POST"])
 def evaluate_annotation():
     """
-    Returns inserts an Intersection over Union value
-    :return: return {"status" : "success"} if it is successful
-    """
+       Returns inserts an Intersection over Union value
+       :return: return {"status" : "success"} if it is successful
+       """
     data = request.json
     print(data)
     annotation_dict = ast.literal_eval(data["annotation"])
@@ -66,9 +66,20 @@ def evaluate_annotation():
         result = compute_iou(poly_shape1[0], poly_shape2[0])
         print('IoU is', result)
 
-        return jsonify({"status": "success", "iou": result})
+        return jsonify({"status": "success", "iou": "result"})
 
     return jsonify({"status": "unsuccess", "iou": "could not be calculated"})
+
+@app.route("/x-ray/showAnnotationResult", methods=["POST"])
+def show_annotation_result():
+    data = request.json
+    annotation_dict = ast.literal_eval(data["annotation"])
+    anomaly0 = annotation_dict["features"][0]["properties"]["anomaly"]
+    anomaly1 = annotation_dict["features"][1]["properties"]["anomaly"]
+    res=compute_iou(anomaly0[0],anomaly1[0])
+
+    return jsonify({"status": "unsuccess","iou":"res"})
+
 
 
 if __name__ == "__main__":

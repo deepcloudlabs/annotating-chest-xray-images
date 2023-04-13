@@ -10,31 +10,41 @@
         @import url("css/toastr.css");
     </style>
 </head>
+
 <body>
-<p></p>
+
 <div class="container">
     <div class="card">
         <div class="card-header">
             <div class="card-title"><h3>Chest X-Ray Annotation Tool</h3></div>
         </div>
-        <div class="card-body">
-            <div class="form-group">
-                <button class="btn btn-success" data-bind="click: loadRandomXrayImage">Load Random X-Ray Image
-                </button>
-                <button class="btn btn-warning" data-bind="click: evaluate">Save and Evaluate My Annotations</button>
 
-            </div>
+
+        <div class="card-body">
+
             <div class="form-group">
+                <button class="btn btn-success" data-bind="click: loadRandomXrayImage">Load Random X-Ray Image </button>
+
+                <button  class="btn btn-warning" data-bind="click: evaluate">Save and Evaluate My Annotations</button>
+
+                <button class="btn btn-danger" onclick="myFunction()" data-bind="click: showAnnotationResult">Show Annotation Result</button>
+            </div>
+
+            <div id="anomalies" class="form-group">
                 <select class="form-control" data-bind="options: anomalies,value: anomaly"></select>
             </div>
-            <div class="form-group">
+
+            <div  id="picture" class="form-group">
                 <div id="inputImageDiv"
                      style="margin-left: auto; margin-right: auto;"></div>
             </div>
+
+
+</div>
+    </div>
         </div>
 
-    </div>
-</div>
+
 <!-- jQuery first, then Bootstrap JS -->
 <script src="js/lib/jquery/jquery.min.js"></script>
 <script src="js/lib/bootstrap/bootstrap.min.js"></script>
@@ -56,3 +66,5 @@
 </body>
 
 </html>
+
+
