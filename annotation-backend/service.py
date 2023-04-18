@@ -4,6 +4,7 @@ from pymongo import MongoClient
 from waitress import serve
 
 from util.iou import compute_iou
+from util.iou import linear_scale
 from util.utility import extract_command_from_request as extract
 from bson.json_util import dumps
 from flask_cors import CORS
@@ -18,6 +19,7 @@ cxr_db = client['cxr']  # cxr database
 
 xray_images = cxr_db.xray_images  # xray_images collection
 
+iou_results_scores=cxr_db.iou_results_scores
 
 # http://localhost:4400/x-ray/images
 @app.route("/x-ray/images", methods=["GET"])
@@ -65,21 +67,15 @@ def evaluate_annotation():
 
         result = compute_iou(poly_shape1[0], poly_shape2[0])
         print('IoU is', result)
+        iou_score=linear_scale(result,0, 1, 0, 10)
+        my_document={"iou":result,"score":iou_score}
+        iou_results_scores.insert_one(my_document)
 
-        return jsonify({"status": "success", "iou": result})
+        return jsonify({"status": "success", "iou":result,"score":iou_score})
 
-    return jsonify({"status": "success", "iou": "could not be calculated"})
+    return jsonify({"status": "success", "iou": "could not be calculated","score":"0"})
 
 
-@app.route("/x-ray/showAnnotationResult", methods=["POST"])
-def show_annotation_result():
-    data = request.json
-    annotation_dict = ast.literal_eval(data["annotation"])
-    anomaly0 = annotation_dict["features"][0]["properties"]["anomaly"]
-    anomaly1 = annotation_dict["features"][1]["properties"]["anomaly"]
-    res = compute_iou(anomaly0[0], anomaly1[0])
-
-    return jsonify({"status": "unsuccess", "iou": "res"})
 
 
 if __name__ == "__main__":

@@ -37,6 +37,7 @@ class AnnotationViewModel {
 
         this.anomalyFeedback = ko.observable("NO_FINDING");
         this.iou = ko.observable("Not available");
+        this.score=ko.observable("Not available");
         this.anomalyLayers = {}
         this.anomaly = ko.observable(this.anomalies[1]);
         this.anomaly.subscribe(anomaly => {
@@ -234,8 +235,9 @@ class AnnotationViewModel {
                 if (res.status.toString() === 'fail') {
                     toastr.error(res.reason);}
                 else if (res.status.toString() === 'success'){
-                    toastr.success(`Annotations are successfully saved and IoU is ${res.iou}.`);
+                    toastr.success(`Annotations are successfully saved and IoU is ${res.iou} and score is ${res.score}.`);
                     this.iou(res.iou);
+                    this.score(res.score);
                 }
             })
             .catch((error) => {
