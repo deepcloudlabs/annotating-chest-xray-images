@@ -6,8 +6,8 @@ class AnnotationViewModel {
     constructor() {
         //region labels
         this.anomalies = ["ATELECTASIS", "CARDIOMEGALY", "CONSOLIDATION", "EDEMA", "EFFUSION", "EMPHYSEMA",
-        "FIBROSIS", "HERNIA", "INFILTRATION", "LESION", "LUNG_OPACITY", "MASS", "NODULE", "PLEURAL_EFFUSION",
-        "PLEURAL_THICKENING", "PNEUMONIA", "PNEUMOTHORAX", "SUPPORT_DEVICES"]
+            "FIBROSIS", "HERNIA", "INFILTRATION", "LESION", "LUNG_OPACITY", "MASS", "NODULE", "PLEURAL_EFFUSION",
+            "PLEURAL_THICKENING", "PNEUMONIA", "PNEUMOTHORAX", "SUPPORT_DEVICES"]
         this.anomaliesWithAll = ["ALL", ...this.anomalies]
         this.anomalyColors = {
             "ATELECTASIS": "red",
@@ -34,20 +34,40 @@ class AnnotationViewModel {
             dataUrl: ko.observable(AppConfig.NO_IMAGE),
             filename: ko.observable("")
         });
+        this.fileData().dataUrl.subscribe(image => {
+            this.xrayImageLoaded(true);
+            this.loadFile(image.toString()).then(() => {
+                toastr.success(`X-Ray Image is successfully loaded.`);
+            });
+        })
+        this.xrayImageLoaded = ko.observable(false);
+        this.xrayImageId = ko.observable();
 
-        this.anomalyFeedback = ko.observable("NO_FINDING");
-        this.iou = ko.observable("Not available");
-        this.score=ko.observable("Not available");
+        //region user information
+        this.userId = ko.observable("jack@example.com");
+        this.userFullName = ko.observable("Jack Shephard");
+        this.userRole = ko.observable("Student");
+        this.userRole.subscribe(newUserRole => {
+            this.xrayImageLoaded(false);
+        })
+        //endregion
+
+        //region iou and score
+        this.iou = ko.observable(Number.NaN);
+        this.score = ko.observable("Not available");
+        //endregion
+
         this.anomalyLayers = {}
         this.anomaly = ko.observable(this.anomalies[1]);
         this.anomaly.subscribe(anomaly => {
-            for (let layer of this.drawnItems.getLayers()) {
+            for (const layer of this.drawnItems.getLayers()) {
                 this.drawnItems.removeLayer(layer)
             }
             if (anomaly === "ALL") {
-                for (let label of this.anomalies) {
-                    if (this.anomalyLayers[label]) {
-                        for (let layer of this.anomalyLayers[label]) {
+                for (const label of this.anomalies) {
+                    const anomalyLayers = this.anomalyLayers[label];
+                    if (anomalyLayers) {
+                        for (let layer of anomalyLayers) {
                             this.drawnItems.addLayer(layer);
                             layer.setStyle({
                                 weight: 8,
@@ -67,7 +87,6 @@ class AnnotationViewModel {
                         fillColor: this.anomalyColors[anomaly]
                     });
                     layer.bindTooltip(anomaly, {permanent: false, offset: [0, 0]});
-
                 }
             }
         });
@@ -79,7 +98,7 @@ class AnnotationViewModel {
                 this.anomalyLayers[this.anomaly()].push(layer);
                 this.drawnItems.removeLayer(layer)
             }
-        }, this,"beforeChange");
+        }, this, "beforeChange");
 
         this.isXrayLoaded = ko.observable(false);
     }
@@ -87,22 +106,42 @@ class AnnotationViewModel {
     zoomElement = async (item, event) => {
         let element = event.target;
         if (document.fullscreenElement == element)
-            document.exitFullscreen();
+            await document.exitFullscreen();
         else
-            element.requestFullscreen();
+            await element.requestFullscreen();
+    }
+
+    save = () => {
+        fetch(`${AppConfig.BASE_URL}/x-ray/images`, {
+            method: "POST",
+            body: JSON.stringify({
+                image: this.fileData().dataUrl(),
+                annotation: this.getGeoJson(),
+                userId: this.userId()
+            }),
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            }
+        })
+        .then(res => res.json())
+        .then(res => {
+
+        });
     }
 
     loadRandomXrayImage = async () => {
-
+        this.xrayImageLoaded(false);
         fetch(`${AppConfig.BASE_URL}/x-ray/images`)
-
             .then(res => res.json())
             .then(res => {
-                res.image = toSrcImage(res.image)
+                res.image = toSrcImage(res.image);
+                this.xrayImageLoaded(true);
                 this.loadFile(res.image)
-                .then(next => {
-                    this.retrieveAnnotations(res.annotation)
-                })
+                    .then(next => {
+                        this.xrayImageId(res._id['$oid']);
+                        this.retrieveAnnotations(res.annotation)
+                    })
             });
     }
 
@@ -118,8 +157,8 @@ class AnnotationViewModel {
             center: [0, 0],
             crs: L.CRS.Simple,
             zoom: 0,
-            minZoom: -2,
-            maxZoom: 2,
+            minZoom: -1,
+            maxZoom: 1,
             attributionControl: false
         });
         this.map.dragging.enable();
@@ -135,7 +174,17 @@ class AnnotationViewModel {
             },
             draw: {
                 position: 'topleft',
-                polygon: true,
+                polygon: {
+                    allowIntersection: false,
+                    drawError: {
+                        color: '#b00b00',
+                        timeout: 1000
+                    },
+                    shapeOptions: {
+                        color: '#bada55'
+                    },
+                    showArea: true
+                },
                 polyline: false,
                 rectangle: true,
                 marker: false,
@@ -143,16 +192,17 @@ class AnnotationViewModel {
                 circlemarker: false
             }
         });
-
         this.map.addControl(this.drawControl);
 
         this.map.on(L.Draw.Event.CREATED, (e) => {
             e.layer.setStyle({
                 weight: 8,
+                clickable: true,
                 color: this.anomalyColors[this.anomaly()],
                 fillColor: this.anomalyColors[this.anomaly()]
             });
             let feature = e.layer.feature = e.layer.feature || {};
+            e.layer.bindTooltip(this.anomaly(), {permanent: false, offset: [0, 0]});
 
             feature.type = feature.type || "Feature";
             let props = feature.properties = feature.properties || {}; // Initialize feature.properties
@@ -164,77 +214,62 @@ class AnnotationViewModel {
         L.imageOverlay(newImage, imageBounds).addTo(this.map);
         this.map.fitBounds(imageBounds);
         //this.map.setMaxBounds([[0, 0], [ dims.width, -dims.height]]);
-        this.anomaly("ALL");
+        //this.anomaly("ALL");
     }
 
-    retrieveAnnotations = (annotation) => {
+    retrieveAnnotations = (annotation = "{ \"features\": []}") => {
         this.anomalyLayers = {};
         for (let layer of this.drawnItems.getLayers()) {
             this.drawnItems.removeLayer(layer)
         }
-            let geoJson = JSON.parse(annotation);
-            for (let geoFeature of geoJson.features) {
-                if (geoFeature.geometry.type === "Polygon") {
-                    let coordinates = [];
-                    for (let coordinate of geoFeature.geometry.coordinates[0]) {
-                        coordinates.push([coordinate[1], coordinate[0]])
-                    }
-                    coordinates.pop()
-                    let layer = L.polygon(coordinates);
-                    let anomaly = geoFeature.properties.anomaly;
-                    layer.bindTooltip(anomaly, {permanent: false, offset: [0, 0]});
-                    layer.setStyle({
-                        weight: 8,
-                        color: this.anomalyColors[anomaly],
-                        fillColor: this.anomalyColors[anomaly]
-                    });
-                    let feature = layer.feature = layer.feature || {};
-                    feature.type = feature.type || "Feature";
-                    let props = feature.properties = feature.properties || {}; // Initialize feature.properties
-                    props.anomaly = anomaly;
-                    this.anomaly(anomaly)
-                    this.drawnItems.addLayer(layer);
-                    if (!this.anomalyLayers.hasOwnProperty(anomaly))
-                        this.anomalyLayers[anomaly] = [];
-                    this.anomalyLayers[anomaly].push(layer);
+        let geoJson = JSON.parse(annotation);
+        for (let geoFeature of geoJson.features) {
+            if (geoFeature.geometry.type === "Polygon") {
+                let coordinates = [];
+                for (let coordinate of geoFeature.geometry.coordinates[0]) {
+                    coordinates.push([coordinate[1], coordinate[0]])
                 }
-        }
-
-    }
-    evaluate=async()=>{
-        for (let label of this.anomalies) {
-            if (this.anomalyLayers[label]) {
-                for (let layer of this.anomalyLayers[label]) {
-                    this.drawnItems.addLayer(layer);
-                    layer.setStyle({
-                        weight: 8,
-                        color: this.anomalyColors[label],
-                        fillColor: this.anomalyColors[label]
-                    });
-                    layer.bindTooltip(label, {permanent: false, offset: [0, 0]});
-                }
+                coordinates.pop()
+                let layer = L.polygon(coordinates);
+                let anomaly = geoFeature.properties.anomaly;
+                layer.bindTooltip(anomaly, {permanent: false, offset: [0, 0]});
+                layer.setStyle({
+                    weight: 8,
+                    color: this.anomalyColors[anomaly],
+                    fillColor: this.anomalyColors[anomaly]
+                });
+                let feature = layer.feature = layer.feature || {};
+                feature.type = feature.type || "Feature";
+                let props = feature.properties = feature.properties || {}; // Initialize feature.properties
+                props.anomaly = anomaly;
+                this.anomaly(anomaly)
+                this.drawnItems.addLayer(layer);
+                if (!this.anomalyLayers.hasOwnProperty(anomaly))
+                    this.anomalyLayers[anomaly] = [];
+                this.anomalyLayers[anomaly].push(layer);
             }
         }
 
-        let geoJson = JSON.stringify(this.drawnItems.toGeoJSON());
-            fetch(`${AppConfig.BASE_URL}/x-ray/evaluate`,
+    }
+    evaluate = async () => {
+        fetch(`${AppConfig.BASE_URL}/x-ray/evaluate`,
             {
-            method: "POST",
-            headers:{ "Content-Type":"application/json",
-                       "Accept":"application/json"
-            },
-            body: JSON.stringify({
-                user_id: 1,
-                input_id:42,
-                annotation: geoJson
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                    user_id: this.userId(),
+                    input_id: this.xrayImageId(),
+                    annotation: this.getGeoJson()
+                })
             })
-        })
             .then(res => res.json())
             .then(res => {
-            console.log(res);
                 if (res.status.toString() === 'fail') {
-                    toastr.error(res.reason);}
-                else if (res.status.toString() === 'success'){
+                    toastr.error(res.reason);
+                } else if (res.status.toString() === 'success') {
                     toastr.success(`Annotations are successfully saved and IoU is ${res.iou} and score is ${res.score}.`);
                     this.iou(res.iou);
                     this.score(res.score);
@@ -245,8 +280,7 @@ class AnnotationViewModel {
             });
     }
 
-
-    saveAnnotations = async () => {
+    getGeoJson = () =>{
         for (let label of this.anomalies) {
             if (label === "ALL") continue;
             if (this.anomalyLayers[label]) {
@@ -261,14 +295,17 @@ class AnnotationViewModel {
                 }
             }
         }
-        let geoJson = JSON.stringify(this.drawnItems.toGeoJSON());
+        return JSON.stringify(this.drawnItems.toGeoJSON());
+    }
+
+    saveAnnotations = async () => {
         fetch(`${AppConfig.BASE_URL}/annotations/${this.file_upload.input_id}`, {
             method: "PUT",
             headers: this.getRequestHeader(),
             body: JSON.stringify({
                 user_id: this.user.user_id(),
                 input_id: this.file_upload.input_id,
-                annotation: geoJson
+                annotation: this.getGeoJson()
             })
         })
             .then(res => res.json())

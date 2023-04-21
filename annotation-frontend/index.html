@@ -127,23 +127,25 @@
                         <a class="nav-icon dropdown-toggle d-inline-block d-sm-none" href="#" data-bs-toggle="dropdown">
                             <i class="align-middle" data-feather="settings"></i>
                         </a>
-
                         <a class="nav-link dropdown-toggle d-none d-sm-inline-block" href="#" data-bs-toggle="dropdown">
-                            <img src="images/avatars/avatar1.jpg" class="avatar img-fluid rounded me-1"
-                                 alt="Jack Shephard"/>
-                            <span class="text-dark">Jack Shephard</span>
+                            <img src="images/avatars/avatar1.jpg" class="avatar img-fluid rounded me-1" data-bind="attr: {'alt': userFullName}" />
+                            <span class="text-dark" data-bind="text: userFullName"></span>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end">
-                            <a class="dropdown-item" href="pages-profile.html"><i class="align-middle me-1"
-                                                                                  data-feather="user"></i> Profile</a>
-                            <a class="dropdown-item" href="#"><i class="align-middle me-1" data-feather="pie-chart"></i>
-                                Analytics</a>
+                            <a class="dropdown-item" href="pages-profile.html"><i class="align-middle me-1" data-feather="user"></i> Profile</a>
+                            <a class="dropdown-item" href="#"><i class="align-middle me-1" data-feather="pie-chart"></i>Analytics</a>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item" href="index.html"><i class="align-middle me-1"
                                                                           data-feather="settings"></i> Settings &
                                 Privacy</a>
-                            <a class="dropdown-item" href="#"><i class="align-middle me-1"
-                                                                 data-feather="help-circle"></i> Help Center</a>
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-item">
+                                <span class="input-group-text"><i class="align-baseline" data-feather="compass"></i> Role</span>
+                                <select id="userRole" data-bind="value: userRole" class="form-select">
+                                    <option>Student</option>
+                                    <option>Radiologist</option>
+                                </select>
+                            </div>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item" href="#">Log out</a>
                         </div>
@@ -156,18 +158,16 @@
 
                 <h1 class="h3 mb-3"><strong>Analytics</strong> Dashboard</h1>
 
-                <div class="row">
+                <div class="row" data-bind="if: userRole() === 'Student'">
                     <div class="col-xl-6 col-xxl-5 d-flex">
                         <div class="w-100">
                             <div class="row">
-
                                 <div class="col-sm-6">
                                     <div class="card">
                                         <div class="card-body">
                                             <div class="row">
                                                 <div class="col mt-0">
                                                     <h5 class="card-title">Intersection over Union</h5>
-
                                                 </div>
 
                                                 <div class="col-auto">
@@ -176,7 +176,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <h1 class="mt-1 mb-3" data-bind="text: iou"></h1>
+                                            <h1 class="mt-1 mb-3" data-bind="text: iou().toFixed(6)"></h1>
                                             <div class="mb-0">
                                                 <span class="text-danger"> <i class="mdi mdi-arrow-bottom-right"></i> -3.65% </span>
                                                 <span class="text-muted">Since last week</span>
@@ -186,15 +186,13 @@
                                     </div>
 
                                 </div>
-                                 <div class="col-sm-6">
+                                <div class="col-sm-6">
                                     <div class="card">
                                         <div class="card-body">
                                             <div class="row">
                                                 <div class="col mt-0">
                                                     <h5 class="card-title">Score</h5>
-
                                                 </div>
-
                                                 <div class="col-auto">
                                                     <div class="stat text-primary">
                                                         <i class="align-middle" data-feather="eye"></i>
@@ -207,33 +205,44 @@
                                                 <span class="text-muted">Since last week</span>
                                             </div>
                                         </div>
-
                                     </div>
-
                                 </div>
-
                             </div>
                         </div>
                     </div>
                 </div>
-
-
-
-
-                <div class="col-xl-6 col-xxl-7">
-                    <div id="anomalies" class="form-group">
-                        <select class="form-control" data-bind="options: anomalies,value: anomaly"></select>
-                    </div>
-                    <div class="form-group">
-                        <button class="btn btn-success" data-bind="click: loadRandomXrayImage">Load Random X-Ray Image
-                        </button>
-
-                        <button class="btn btn-warning" data-bind="click: evaluate">Save and Evaluate My Annotations
-                        </button>
-                    </div>
-                    <div id="picture" class="form-group">
-                        <div id="inputImageDiv"
-                             style="margin-left: auto; margin-right: auto;"></div>
+                <div class="row">
+                    <div class="col-xl-6 col-xxl-5">
+                        <div class="form-group">
+                            <button class="btn-lg btn-success" data-bind="click: loadRandomXrayImage, visible: userRole() === 'Student'">Next X-Ray Image</button>
+                            <label data-bind="visible: userRole() === 'Radiologist'">
+                                <input type="file"
+                                       data-bind="fileInput: fileData"
+                                       style="display: none"></input>
+                                <span class="btn-lg btn-success">Load X-Ray Image</span>
+                            </label>
+                        </div>
+                        <div class="card" data-bind="visible: xrayImageLoaded"
+                             style="margin-left: auto; margin-right: auto;width: fit-content;height: fit-content;">
+                            <div class="card-header">
+                                <div id="anomalies" class="form-group">
+                                    <div id="anomalies-select" class="input-group mb-3">
+                                        <button class="btn-lg btn-warning" data-bind="click: evaluate, visible: userRole() === 'Student'">Evaluate</button>
+                                        <button class="btn-lg btn-info" data-bind="click: save, visible: userRole() === 'Radiologist'">Save</button>
+                                        <div class="form-floating">
+                                            <select class="form-control"
+                                            data-bind="options: anomalies,value: anomaly"></select>
+                                            <label for="anomalies-select">Abnormality</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="picture" class="form-group">
+                                    <div id="inputImageDiv" style="margin-left: auto; margin-right: auto;"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
