@@ -1,4 +1,6 @@
 import ast
+
+from bson import ObjectId
 from flask import Flask, jsonify, request, Response
 from pymongo import MongoClient
 from waitress import serve
@@ -19,7 +21,8 @@ cxr_db = client['cxr']  # cxr database
 
 xray_images = cxr_db.xray_images  # xray_images collection
 
-iou_results_scores=cxr_db.iou_results_scores
+iou_results_scores = cxr_db.iou_results_scores
+
 
 # http://localhost:4400/x-ray/images
 @app.route("/x-ray/images", methods=["GET"])
@@ -28,7 +31,9 @@ def get_random_xray_chest_image():
     Returns a random xray image
     :return: return a random base64-encoded xray chest image
     """
-    return Response(dumps([img for img in xray_images.aggregate([{"$sample": {"size": 1}}])][0]),
+    xray_image = [doc for doc in xray_images.aggregate([{"$sample": {"size": 1}}])][0]
+    del xray_image['annotation']
+    return Response(dumps(xray_image),
                     mimetype="application/json")
 
 
@@ -36,7 +41,7 @@ def get_random_xray_chest_image():
 
 @app.route("/x-ray/images", methods=["POST"])
 def upload_xray_chest_image():
-    command = extract(request, ["image", "annotation", "type", "features", "coordinates", "geometry", "properties"])
+    command = extract(request, ["image", "annotation", "userId"])
     """
     Returns inserts an x-ray image
     :return: return {"status" : "success"} if it is successful
@@ -52,30 +57,29 @@ def evaluate_annotation():
        :return: return {"status" : "success"} if it is successful
        """
     data = request.json
-    print(data)
     annotation_dict = ast.literal_eval(data["annotation"])
     print(annotation_dict["features"])
-
-    anomaly0 = annotation_dict["features"][0]["properties"]["anomaly"]
-    anomaly1 = annotation_dict["features"][1]["properties"]["anomaly"]
+    ground_truth = xray_images.find_one({"_id": ObjectId(data["input_id"])})
+    ground_truth_annotation_dict = ast.literal_eval(ground_truth["annotation"])
+    anomaly0 = ground_truth_annotation_dict["features"][0]["properties"]["anomaly"]
+    anomaly1 = annotation_dict["features"][0]["properties"]["anomaly"]
 
     if anomaly0 == anomaly1:
-        poly_shape1 = annotation_dict["features"][0]['geometry']["coordinates"]  # picture coordinates
-        poly_shape2 = annotation_dict["features"][1]['geometry']["coordinates"]  # annotated part
+        poly_shape1 = ground_truth_annotation_dict["features"][0]['geometry']["coordinates"]  # picture coordinates
+        poly_shape2 = annotation_dict["features"][0]['geometry']["coordinates"]  # annotated part
         print("Anomaly coordinates", poly_shape1[0])
         print("Annotated coordinates", poly_shape2[0])
 
         result = compute_iou(poly_shape1[0], poly_shape2[0])
         print('IoU is', result)
-        iou_score=linear_scale(result,0, 1, 0, 10)
-        my_document={"iou":result,"score":iou_score}
+        iou_score = linear_scale(result, 0, 1, 0, 10)
+        my_document = {"iou": result, "score": iou_score, "user_id": data['user_id'], "input_id": data['input_id'],
+                       "annotation": data["annotation"]}
         iou_results_scores.insert_one(my_document)
 
-        return jsonify({"status": "success", "iou":result,"score":iou_score})
+        return jsonify({"status": "success", "iou": result, "score": iou_score})
 
-    return jsonify({"status": "success", "iou": "could not be calculated","score":"0"})
-
-
+    return jsonify({"status": "success", "iou": "could not be calculated", "score": "0"})
 
 
 if __name__ == "__main__":
