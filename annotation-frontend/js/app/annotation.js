@@ -5,7 +5,7 @@
 class AnnotationViewModel {
     constructor() {
         //region labels
-        this.anomalies = ["ATELECTASIS", "CARDIOMEGALY", "CONSOLIDATION", "EDEMA", "EFFUSION", "EMPHYSEMA",
+        this.anomalies = ["NO_DISEASE","ATELECTASIS", "CARDIOMEGALY", "CONSOLIDATION", "EDEMA", "EFFUSION", "EMPHYSEMA",
             "FIBROSIS", "HERNIA", "INFILTRATION", "LESION", "LUNG_OPACITY", "MASS", "NODULE", "PLEURAL_EFFUSION",
             "PLEURAL_THICKENING", "PNEUMONIA", "PNEUMOTHORAX", "SUPPORT_DEVICES"]
         this.anomaliesWithAll = ["ALL", ...this.anomalies]
@@ -53,10 +53,18 @@ class AnnotationViewModel {
         })
         //endregion
 
-        //region iou and score
+        //region iou and score and disease score
         this.iou = ko.observable(Number.NaN);
-        this.score = ko.observable("Not available");
+        this.diseaseScore = ko.observable(Number.NaN);
+        this.score=ko.observable(0);
         //endregion
+
+        this.savedValue=localStorage.getItem('this.score()');
+        if (this.savedValue !== null) {
+            this.score(this.savedValue);}
+        this.score.subscribe(function (newValue) {
+            localStorage.setItem('score', newValue);
+            });
 
         //region ground truth and annotation anomaly
         this.groundTruthAnomaly=ko.observable("Not available");
@@ -64,8 +72,8 @@ class AnnotationViewModel {
         //endregion
 
         this.anomalyLayers = {}
-        this.anomaly = ko.observable(this.anomalies[1]);
-        console.log(this.anomaly());
+        this.anomaly = ko.observable(this.anomalies[0]);
+
         this.anomaly.subscribe(anomaly => {
             for (const layer of this.drawnItems.getLayers()) {
                 this.drawnItems.removeLayer(layer)
@@ -133,8 +141,8 @@ class AnnotationViewModel {
         })
         .then(res => res.json())
         .then(res => {
-
-        });
+            toastr.success(`Image is saved`);
+       });
     }
 
     loadRandomXrayImage = async () => {
@@ -277,30 +285,31 @@ class AnnotationViewModel {
             .then(res => res.json())
             .then(res => {
                 if (res.status.toString() === 'fail') {
-                    toastr.success(`IoU ${res.iou} `);
+                    toastr.success(`${res.iou}`);
+                    this.score(this.score()-1);
+                    this.diseaseScore(res.diseaseScore);
                     this.groundTruthAnomaly(res.groundTruthAnomaly);
                     this.annotationAnomaly(this.anomaly());
+                    console.log("fail score",this.score());
                     console.log("fail ground ",this.groundTruthAnomaly());
                     console.log("fail annotation ",this.annotationAnomaly());
 
                 } else if (res.status.toString() === 'success') {
-                    toastr.success(`Annotations are successfully saved and IoU is ${res.iou} and score is ${res.score}.`);
+                    toastr.success(`Annotations are successfully saved and IoU is ${res.iou} and score is ${res.diseaseScore}.`);
                     this.iou(res.iou);
-                    this.score(res.score);
+                    this.diseaseScore(res.diseaseScore);
+                    this.score(this.score()+1);
                     this.groundTruthAnomaly(res.groundTruthAnomaly);
                     this.annotationAnomaly(this.anomaly());
+                    console.log("success score",this.score());
                     console.log("success ground ",this.groundTruthAnomaly());
                     console.log("success annotation ",this.annotationAnomaly());
                 }
-
-
-
             })
             .catch((error) => {
                 toastr.error(error);
             });
     }
-
     getGeoJson = () =>{
         for (let label of this.anomalies) {
             if (label === "ALL") continue;
@@ -401,4 +410,12 @@ class AnnotationViewModel {
     };
 
     dragover = e => e.preventDefault();
+
+
+
 }
+
+window.addEventListener('beforeunload', function() {
+    // Clear the localStorage
+    localStorage.clear();
+});
