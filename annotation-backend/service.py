@@ -55,19 +55,23 @@ def evaluate_annotation():
     """
        Returns inserts an Intersection over Union value
        :return: return {"status" : "success"} if it is successful
-       """
+    """
     data = request.json
+
     annotation_dict = ast.literal_eval(data["annotation"])
-    print(annotation_dict["features"])
+
     ground_truth = xray_images.find_one({"_id": ObjectId(data["input_id"])})
     ground_truth_annotation_dict = ast.literal_eval(ground_truth["annotation"])
     anomaly0 = ground_truth_annotation_dict["features"][0]["properties"]["anomaly"]
     anomaly1 = annotation_dict["features"][0]["properties"]["anomaly"]
+    print("Ground truth ", anomaly0)
+    print("Annotated truth ",anomaly1)
 
     if anomaly0 == anomaly1:
         poly_shape1 = ground_truth_annotation_dict["features"][0]['geometry']["coordinates"]  # picture coordinates
         poly_shape2 = annotation_dict["features"][0]['geometry']["coordinates"]  # annotated part
-        print("Anomaly coordinates", poly_shape1[0])
+
+        print("Ground truth coordinates", poly_shape1[0])
         print("Annotated coordinates", poly_shape2[0])
 
         result = compute_iou(poly_shape1[0], poly_shape2[0])
@@ -77,9 +81,9 @@ def evaluate_annotation():
                        "annotation": data["annotation"]}
         iou_results_scores.insert_one(my_document)
 
-        return jsonify({"status": "success", "iou": result, "score": iou_score})
+        return jsonify({"status": "success", "iou": result, "score": iou_score,"annotationAnomaly":anomaly1,"groundTruthAnomaly":anomaly0})
 
-    return jsonify({"status": "success", "iou": "could not be calculated", "score": "0"})
+    return jsonify({"status": "fail", "iou": "could not be calculated", "score": "0","annotationAnomaly":anomaly1,"groundTruthAnomaly":anomaly0})
 
 
 if __name__ == "__main__":

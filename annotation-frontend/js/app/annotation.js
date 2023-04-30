@@ -30,6 +30,7 @@ class AnnotationViewModel {
             "SUPPORT_DEVICES": "PeachPuff"
         };
         //endregion
+
         this.fileData = ko.observable({
             dataUrl: ko.observable(AppConfig.NO_IMAGE),
             filename: ko.observable("")
@@ -57,8 +58,14 @@ class AnnotationViewModel {
         this.score = ko.observable("Not available");
         //endregion
 
+        //region ground truth and annotation anomaly
+        this.groundTruthAnomaly=ko.observable("Not available");
+        this.annotationAnomaly=ko.observable("Not available");
+        //endregion
+
         this.anomalyLayers = {}
         this.anomaly = ko.observable(this.anomalies[1]);
+        console.log(this.anomaly());
         this.anomaly.subscribe(anomaly => {
             for (const layer of this.drawnItems.getLayers()) {
                 this.drawnItems.removeLayer(layer)
@@ -131,6 +138,8 @@ class AnnotationViewModel {
     }
 
     loadRandomXrayImage = async () => {
+        this.groundTruthAnomaly("Not available");
+        this.annotationAnomaly("Not available");
         this.xrayImageLoaded(false);
         fetch(`${AppConfig.BASE_URL}/x-ray/images`)
             .then(res => res.json())
@@ -268,12 +277,24 @@ class AnnotationViewModel {
             .then(res => res.json())
             .then(res => {
                 if (res.status.toString() === 'fail') {
-                    toastr.error(res.reason);
+                    toastr.success(`IoU ${res.iou} `);
+                    this.groundTruthAnomaly(res.groundTruthAnomaly);
+                    this.annotationAnomaly(this.anomaly());
+                    console.log("fail ground ",this.groundTruthAnomaly());
+                    console.log("fail annotation ",this.annotationAnomaly());
+
                 } else if (res.status.toString() === 'success') {
                     toastr.success(`Annotations are successfully saved and IoU is ${res.iou} and score is ${res.score}.`);
                     this.iou(res.iou);
                     this.score(res.score);
+                    this.groundTruthAnomaly(res.groundTruthAnomaly);
+                    this.annotationAnomaly(this.anomaly());
+                    console.log("success ground ",this.groundTruthAnomaly());
+                    console.log("success annotation ",this.annotationAnomaly());
                 }
+
+
+
             })
             .catch((error) => {
                 toastr.error(error);
