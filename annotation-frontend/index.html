@@ -274,30 +274,11 @@
                         </div>
                     </div>
                 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                <div class="row">
+         <div class="row">
                     <div class="col-xl-6 col-xxl-5">
                         <div class="form-group">
                             <button class="btn-lg btn-success" data-bind="click: loadRandomXrayImage, visible: userRole() === 'Student'">Next X-Ray Image</button>
+                            <button class="btn-lg btn-danger" data-bind="click: getScores, visible: userRole() === 'Student'">Stop</button>
                             <label data-bind="visible: userRole() === 'Radiologist'">
                                 <input type="file"
                                        data-bind="fileInput: fileData"

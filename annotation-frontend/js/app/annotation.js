@@ -57,6 +57,7 @@ class AnnotationViewModel {
         this.iou = ko.observable(Number.NaN);
         this.diseaseScore = ko.observable(Number.NaN);
         this.score=ko.observable(0);
+
         //endregion
 
         this.savedValue=localStorage.getItem('this.score()');
@@ -144,10 +145,27 @@ class AnnotationViewModel {
             toastr.success(`Image is saved`);
        });
     }
+    getScores=()=>{
+    fetch(`${AppConfig.BASE_URL}/x-ray/scores`,{
+        method:"POST",
+        body:JSON.stringify({
+            userId: this.userId(),
+            score:this.score()}),
+        headers:{
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+    })
+    .then(res=>res.json())
+    .then(res=>{
+    toastr.success('Score restored.')});
+    }
 
     loadRandomXrayImage = async () => {
         this.groundTruthAnomaly("Not available");
         this.annotationAnomaly("Not available");
+        this.iou = ko.observable(Number.NaN);
+        this.diseaseScore = ko.observable(Number.NaN);
         this.xrayImageLoaded(false);
         fetch(`${AppConfig.BASE_URL}/x-ray/images`)
             .then(res => res.json())
@@ -279,7 +297,8 @@ class AnnotationViewModel {
                 body: JSON.stringify({
                     user_id: this.userId(),
                     input_id: this.xrayImageId(),
-                    annotation: this.getGeoJson()
+                    annotation: this.getGeoJson(),
+
                 })
             })
             .then(res => res.json())
@@ -297,8 +316,8 @@ class AnnotationViewModel {
                 } else if (res.status.toString() === 'success') {
                     toastr.success(`Annotations are successfully saved and IoU is ${res.iou} and score is ${res.diseaseScore}.`);
                     this.iou(res.iou);
-                    this.diseaseScore(res.diseaseScore);
                     this.score(this.score()+1);
+                    this.diseaseScore(res.diseaseScore);
                     this.groundTruthAnomaly(res.groundTruthAnomaly);
                     this.annotationAnomaly(this.anomaly());
                     console.log("success score",this.score());
@@ -412,10 +431,10 @@ class AnnotationViewModel {
     dragover = e => e.preventDefault();
 
 
-
 }
+ window.addEventListener('beforeunload', function() {
+        // Clear the localStorage
+        localStorage.clear();
+    });
 
-window.addEventListener('beforeunload', function() {
-    // Clear the localStorage
-    localStorage.clear();
-});
+
