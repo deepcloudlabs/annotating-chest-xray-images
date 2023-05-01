@@ -21,7 +21,11 @@ cxr_db = client['cxr']  # cxr database
 
 xray_images = cxr_db.xray_images  # xray_images collection
 
-iou_results_scores = cxr_db.iou_results_scores
+# iou_results_scores = cxr_db.iou_results_scores
+
+annotation_information=cxr_db.annotation_information
+
+score_graphs=cxr_db.score_graphs
 
 
 # http://localhost:4400/x-ray/images
@@ -42,11 +46,19 @@ def get_random_xray_chest_image():
 @app.route("/x-ray/images", methods=["POST"])
 def upload_xray_chest_image():
     command = extract(request, ["image", "annotation", "userId"])
+
     """
     Returns inserts an x-ray image
     :return: return {"status" : "success"} if it is successful
     """
     xray_images.insert_one(command)
+    return jsonify({"status": "success"})
+
+@app.route("/x-ray/scores", methods=["POST"])
+def get_scores():
+    command=extract(request,["userId","score"])
+    score_graphs.insert_one(command)
+    print(command)
     return jsonify({"status": "success"})
 
 
@@ -57,7 +69,6 @@ def evaluate_annotation():
        :return: return {"status" : "success"} if it is successful
     """
     data = request.json
-
     annotation_dict = ast.literal_eval(data["annotation"])
 
     ground_truth = xray_images.find_one({"_id": ObjectId(data["input_id"])})
@@ -69,21 +80,23 @@ def evaluate_annotation():
 
     if ground_truth_anomaly=='NO_DISEASE' and annotation_anomaly=='NO_DISEASE':
 
-        return jsonify({"status": "success", "iou": "there is no disease and you found it.", "diseaseScore": "NO_DISEASE"})
+        return jsonify({"status": "success", "iou": "there is no disease and you found it.",
+                        "diseaseScore": "NO_DISEASE"})
 
     elif ground_truth_anomaly=='NO_DISEASE' and annotation_anomaly!='NO_DISEASE':
 
         return jsonify({"status": "fail", "iou": "there is no disease you choose a disease.", "diseaseScore": 0,
-                        "annotationAnomaly": annotation_anomaly, "groundTruthAnomaly": ground_truth_anomaly})
+                        "annotationAnomaly": annotation_anomaly,
+                        "groundTruthAnomaly": ground_truth_anomaly})
 
     elif ground_truth_anomaly != 'NO_DISEASE' and annotation_anomaly == 'NO_DISEASE':
+
         return jsonify({"status": "fail", "iou": "there is a disease you choose no disease.", "diseaseScore": 0,
-                        "annotationAnomaly": annotation_anomaly, "groundTruthAnomaly": ground_truth_anomaly})
-
-
-
+                        "annotationAnomaly": annotation_anomaly,
+                        "groundTruthAnomaly": ground_truth_anomaly})
 
     elif ground_truth_anomaly == annotation_anomaly:
+
         poly_shape1 = ground_truth_annotation_dict["features"][0]['geometry']["coordinates"]  # picture coordinates
         poly_shape2 = annotation_dict["features"][0]['geometry']["coordinates"]  # annotated part
 
@@ -93,19 +106,24 @@ def evaluate_annotation():
         result = compute_iou(poly_shape1[0], poly_shape2[0])
         print('IoU is', result)
         iou_score = linear_scale(result, 0, 1, 0, 10)
-        my_document = {"iou": result, "score": iou_score, "user_id": data['user_id'], "input_id": data['input_id'],
+        my_document = {"iou": result, "diseaseScore": iou_score, "user_id": data['user_id'], "input_id": data['input_id'],
                        "annotation": data["annotation"]}
-        iou_results_scores.insert_one(my_document)
+        annotation_information.insert_one(my_document)
 
         print("Ground truth ", ground_truth_anomaly)
         print("Annotated truth ", annotation_anomaly)
 
         return jsonify({"status": "success", "iou": result, "diseaseScore": iou_score,
-                        "annotationAnomaly":annotation_anomaly,"groundTruthAnomaly":ground_truth_anomaly})
+                        "annotationAnomaly":annotation_anomaly,
+                        "groundTruthAnomaly":ground_truth_anomaly})
 
     elif ground_truth_anomaly != annotation_anomaly:
+
         return jsonify({"status": "fail", "iou": "you choose different disease", "diseaseScore":0,
-                        "annotationAnomaly":annotation_anomaly,"groundTruthAnomaly":ground_truth_anomaly})
+                        "annotationAnomaly":annotation_anomaly,
+                        "groundTruthAnomaly":ground_truth_anomaly})
+
+
 if __name__ == "__main__":
     print("Server is running...")
     serve(app, host="localhost", port=4400)
