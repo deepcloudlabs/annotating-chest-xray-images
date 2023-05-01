@@ -145,6 +145,7 @@ class AnnotationViewModel {
             toastr.success(`Image is saved`);
        });
     }
+
     getScores=()=>{
     fetch(`${AppConfig.BASE_URL}/x-ray/scores`,{
         method:"POST",
@@ -158,7 +159,26 @@ class AnnotationViewModel {
     })
     .then(res=>res.json())
     .then(res=>{
-    toastr.success('Score restored.')});
+    toastr.success('Score are stored.')});
+    }
+
+    getDiseaseBasedScore=()=>{
+    fetch(`${AppConfig.BASE_URL}/x-ray/diseaseScores`,{
+        method:"POST",
+        body:JSON.stringify({
+            userId: this.userId(),
+            diseaseScore:this.diseaseScore(),
+            annotation:this.annotationAnomaly()
+            }),
+        headers:{
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+    })
+    .then(res=>res.json())
+    .then(res=>{
+    toastr.success('Disease score are stored.')});
+
     }
 
     loadRandomXrayImage = async () => {
