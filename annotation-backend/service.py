@@ -27,6 +27,8 @@ annotation_information=cxr_db.annotation_information
 
 score_graphs=cxr_db.score_graphs
 
+disease_score_graphs=cxr_db.disease_score_graphs
+
 
 # http://localhost:4400/x-ray/images
 @app.route("/x-ray/images", methods=["GET"])
@@ -58,6 +60,12 @@ def upload_xray_chest_image():
 def get_scores():
     command=extract(request,["userId","score"])
     score_graphs.insert_one(command)
+    return jsonify({"status": "success"})
+
+@app.route("/x-ray/diseaseScores", methods=["POST"])
+def get_disease_based_scores():
+    command=extract(request,["userId","diseaseScore","annotation"])
+    disease_score_graphs.insert_one(command)
     print(command)
     return jsonify({"status": "success"})
 
