@@ -277,8 +277,7 @@
                     <div class="col-xl-6 col-xxl-5">
                         <div class="form-group">
                             <button class="btn-lg btn-success" data-bind="click: loadRandomXrayImage ,visible: userRole() === 'Student'">Next X-Ray Image</button>
-                            <button class="btn-lg btn-info" data-bind="click:getDiseaseBasedScore, visible: userRole() === 'Student'">Store Disease Score</button>
-                            <button class="btn-lg btn-danger" data-bind="click: getScores, visible: userRole() === 'Student'">Stop</button>
+                            <button class="btn-lg btn-danger" data-bind="click: storeDailyScores, visible: userRole() === 'Student'">Enough for Today!</button>
                             <label data-bind="visible: userRole() === 'Radiologist'">
                                 <input type="file"
                                        data-bind="fileInput: fileData"

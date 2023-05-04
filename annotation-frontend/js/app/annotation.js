@@ -146,8 +146,8 @@ class AnnotationViewModel {
        });
     }
 
-    getScores=()=>{
-    fetch(`${AppConfig.BASE_URL}/x-ray/scores`,{
+    storeDailyScores=()=>{
+    fetch(`${AppConfig.BASE_URL}/x-ray/dailyScores`,{
         method:"POST",
         body:JSON.stringify({
             userId: this.userId(),
@@ -162,24 +162,7 @@ class AnnotationViewModel {
     toastr.success('Score are stored.')});
     }
 
-    getDiseaseBasedScore=()=>{
-    fetch(`${AppConfig.BASE_URL}/x-ray/diseaseScores`,{
-        method:"POST",
-        body:JSON.stringify({
-            userId: this.userId(),
-            diseaseScore:this.diseaseScore(),
-            annotation:this.annotationAnomaly()
-            }),
-        headers:{
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-        }
-    })
-    .then(res=>res.json())
-    .then(res=>{
-    toastr.success('Disease score are stored.')});
 
-    }
 
     loadRandomXrayImage = async () => {
         this.groundTruthAnomaly("Not available");
@@ -306,6 +289,7 @@ class AnnotationViewModel {
         }
 
     }
+
     evaluate = async () => {
         fetch(`${AppConfig.BASE_URL}/x-ray/evaluate`,
             {
@@ -345,9 +329,33 @@ class AnnotationViewModel {
                     console.log("success annotation ",this.annotationAnomaly());
                 }
             })
+            .then(res=>{
+                this.storeDiseaseBasedScores();
+
+            })
+
             .catch((error) => {
                 toastr.error(error);
             });
+    }
+    storeDiseaseBasedScores=()=>{
+    fetch(`${AppConfig.BASE_URL}/x-ray/diseaseScores`,{
+        method:"POST",
+        body:JSON.stringify({
+            userId: this.userId(),
+            annotation:this.annotationAnomaly(),
+            diseaseScore:this.diseaseScore()
+
+            }),
+        headers:{
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+    })
+    .then(res=>res.json())
+    .then(res=>{
+    toastr.success('Disease score are stored.')});
+
     }
     getGeoJson = () =>{
         for (let label of this.anomalies) {
