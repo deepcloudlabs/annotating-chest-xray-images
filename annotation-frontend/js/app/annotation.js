@@ -49,6 +49,7 @@ class AnnotationViewModel {
         this.userFullName = ko.observable("Jack Shephard");
         this.userRole = ko.observable("Student");
         this.userRole.subscribe(newUserRole => {
+            console.log(`newUserRole: ${newUserRole}`)
             this.xrayImageLoaded(false);
         })
         //endregion
