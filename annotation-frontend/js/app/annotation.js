@@ -8,6 +8,7 @@ class AnnotationViewModel {
         this.anomalies = ["NO_DISEASE","ATELECTASIS", "CARDIOMEGALY", "CONSOLIDATION", "EDEMA", "EFFUSION", "EMPHYSEMA",
             "FIBROSIS", "HERNIA", "INFILTRATION", "LESION", "LUNG_OPACITY", "MASS", "NODULE", "PLEURAL_EFFUSION",
             "PLEURAL_THICKENING", "PNEUMONIA", "PNEUMOTHORAX", "SUPPORT_DEVICES"]
+
         this.anomaliesWithAll = ["ALL", ...this.anomalies]
         this.anomalyColors = {
             "ATELECTASIS": "red",
@@ -58,7 +59,6 @@ class AnnotationViewModel {
         this.iou = ko.observable(Number.NaN);
         this.diseaseScore = ko.observable(Number.NaN);
         this.score=ko.observable(0);
-
         //endregion
 
         this.savedValue=localStorage.getItem('this.score()');
@@ -132,7 +132,7 @@ class AnnotationViewModel {
         fetch(`${AppConfig.BASE_URL}/x-ray/images`, {
             method: "POST",
             body: JSON.stringify({
-                image: this.fileData().dataUrl(),
+                image: this.fileData().dataUrl().toString().split(",")[1],
                 annotation: this.getGeoJson(),
                 userId: this.userId()
             }),
@@ -147,29 +147,28 @@ class AnnotationViewModel {
        });
     }
 
-    storeDailyScores=()=>{
-    fetch(`${AppConfig.BASE_URL}/x-ray/dailyScores`,{
-        method:"POST",
-        body:JSON.stringify({
-            userId: this.userId(),
-            score:this.score()}),
-        headers:{
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-        }
-    })
-    .then(res=>res.json())
-    .then(res=>{
-    toastr.success('Score are stored.')});
-    }
+//    storeDailyScores=()=>{
+//    fetch(`${AppConfig.BASE_URL}/x-ray/dailyScores`,{
+//        method:"POST",
+//        body:JSON.stringify({
+//            userId: this.userId(),
+//            score:this.score()}),
+//        headers:{
+//            "Accept": "application/json",
+//            "Content-Type": "application/json"
+//        }
+//    })
+//    .then(res=>res.json())
+//    .then(res=>{
+//    toastr.success('Score are stored.')});
+//    }
 
 
 
     loadRandomXrayImage = async () => {
         this.groundTruthAnomaly("Not available");
         this.annotationAnomaly("Not available");
-        this.iou = ko.observable(Number.NaN);
-        this.diseaseScore = ko.observable(Number.NaN);
+
         this.xrayImageLoaded(false);
         fetch(`${AppConfig.BASE_URL}/x-ray/images`)
             .then(res => res.json())
@@ -258,10 +257,11 @@ class AnnotationViewModel {
 
     retrieveAnnotations = (annotation = "{ \"features\": []}") => {
         this.anomalyLayers = {};
-        for (let layer of this.drawnItems.getLayers()) {
-            this.drawnItems.removeLayer(layer)
-        }
+//        for (let layer of this.drawnItems.getLayers()) {
+//            this.drawnItems.removeLayer(layer)
+//        }
         let geoJson = JSON.parse(annotation);
+
         for (let geoFeature of geoJson.features) {
             if (geoFeature.geometry.type === "Polygon") {
                 let coordinates = [];
@@ -270,7 +270,9 @@ class AnnotationViewModel {
                 }
                 coordinates.pop()
                 let layer = L.polygon(coordinates);
+                console.log("layer",layer);
                 let anomaly = geoFeature.properties.anomaly;
+                console.log("anomaly",anomaly);
                 layer.bindTooltip(anomaly, {permanent: false, offset: [0, 0]});
                 layer.setStyle({
                     weight: 8,
@@ -281,13 +283,35 @@ class AnnotationViewModel {
                 feature.type = feature.type || "Feature";
                 let props = feature.properties = feature.properties || {}; // Initialize feature.properties
                 props.anomaly = anomaly;
-                this.anomaly(anomaly)
+                this.anomaly(anomaly);
                 this.drawnItems.addLayer(layer);
                 if (!this.anomalyLayers.hasOwnProperty(anomaly))
                     this.anomalyLayers[anomaly] = [];
                 this.anomalyLayers[anomaly].push(layer);
+
             }
         }
+
+        for (let label of this.anomalies) {
+
+            if (label === "ALL") continue;
+            if (this.anomalyLayers[label]) {
+                for (let layer of this.anomalyLayers[label]) {
+                    this.drawnItems.addLayer(layer);
+                    layer.setStyle({
+                        weight: 8,
+                        color: this.anomalyColors[label],
+                        fillColor: this.anomalyColors[label]
+                    });
+                    layer.bindTooltip(label, {permanent: false, offset: [0, 0]});
+                }
+            }
+        }
+
+        return JSON.stringify(this.drawnItems.toGeoJSON());
+
+
+
 
     }
 
@@ -302,13 +326,15 @@ class AnnotationViewModel {
                 body: JSON.stringify({
                     user_id: this.userId(),
                     input_id: this.xrayImageId(),
-                    annotation: this.getGeoJson(),
+                    annotation: this.retrieveAnnotations(),
 
                 })
             })
+
             .then(res => res.json())
             .then(res => {
                 if (res.status.toString() === 'fail') {
+
                     toastr.success(`${res.iou}`);
                     this.score(this.score()-1);
                     this.diseaseScore(res.diseaseScore);
@@ -330,36 +356,18 @@ class AnnotationViewModel {
                     console.log("success annotation ",this.annotationAnomaly());
                 }
             })
-            .then(res=>{
-                this.storeDiseaseBasedScores();
 
-            })
 
             .catch((error) => {
                 toastr.error(error);
             });
-    }
-    storeDiseaseBasedScores=()=>{
-    fetch(`${AppConfig.BASE_URL}/x-ray/diseaseScores`,{
-        method:"POST",
-        body:JSON.stringify({
-            userId: this.userId(),
-            annotation:this.annotationAnomaly(),
-            diseaseScore:this.diseaseScore()
-
-            }),
-        headers:{
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-        }
-    })
-    .then(res=>res.json())
-    .then(res=>{
-    toastr.success('Disease score are stored.')});
 
     }
+
     getGeoJson = () =>{
+
         for (let label of this.anomalies) {
+
             if (label === "ALL") continue;
             if (this.anomalyLayers[label]) {
                 for (let layer of this.anomalyLayers[label]) {
@@ -373,6 +381,7 @@ class AnnotationViewModel {
                 }
             }
         }
+
         return JSON.stringify(this.drawnItems.toGeoJSON());
     }
 
