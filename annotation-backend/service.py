@@ -21,11 +21,11 @@ cxr_db = client['cxr']  # cxr database
 
 xray_images = cxr_db.xray_images  # xray_images collection
 
-annotation_information=cxr_db.annotation_information
 
-daily_scores=cxr_db.daily_scores
 
-disease_scores=cxr_db.disease_scores
+annotation =cxr_db.annotation
+
+disease_scores = cxr_db.disease_scores
 
 
 # http://localhost:4400/x-ray/images
@@ -54,18 +54,12 @@ def upload_xray_chest_image():
     xray_images.insert_one(command)
     return jsonify({"status": "success"})
 
-@app.route("/x-ray/dailyScores", methods=["POST"])
-def store_daily_scores():
-    command=extract(request,["userId","score"])
-    daily_scores.insert_one(command)
-    return jsonify({"status": "success"})
+# @app.route("/x-ray/dailyScores", methods=["POST"])
+# def store_daily_scores():
+#     command=extract(request,["userId","score"])
+#     return jsonify({"status": "success"})
+#
 
-@app.route("/x-ray/diseaseScores", methods=["POST"])
-def store_disease_based_scores():
-    command=extract(request,["userId","annotation","diseaseScore"])
-    disease_scores.insert_one(command)
-
-    return jsonify({"status": "success"})
 
 
 @app.route("/x-ray/evaluate", methods=["POST"])
@@ -75,59 +69,76 @@ def evaluate_annotation():
        :return: return {"status" : "success"} if it is successful
     """
     data = request.json
-    annotation_dict = ast.literal_eval(data["annotation"])
-    # print("annotation_dict",annotation_dict['features'])
     ground_truth = xray_images.find_one({"_id": ObjectId(data["input_id"])})
-    ground_truth_annotation_dict = ast.literal_eval(ground_truth["annotation"])
-    # print("ground_truth_annotation_dict", ground_truth_annotation_dict['features'])
-    ground_truth_anomaly = ground_truth_annotation_dict["features"][0]["properties"]["anomaly"]
+    ground_truth_dict = ast.literal_eval(ground_truth["annotation"])
+    ground_truth_anomaly = ground_truth_dict["features"][0]["properties"]["anomaly"]
 
-    annotation_info = {"user_id": data['user_id'], "input_id": data['input_id'],
-                       "annotation": data["annotation"]}
-    annotation_information.insert_one(annotation_info)
-
-    if ground_truth_annotation_dict['features']==[] and annotation_dict['features']==[]:
-        return jsonify({"status": "success", "iou": "there is no disease and you found it.",
-                        "diseaseScore": "NO_DISEASE"})
-
-    elif ground_truth_annotation_dict['features']!=[] and annotation_dict['features']==[]:
-
-        return jsonify({"status": "fail", "iou": "there is a disease you choose no disease.", "diseaseScore": 0,
-                        "annotationAnomaly": annotation_dict['features'],
-                        "groundTruthAnomaly": ground_truth_anomaly})
-
-    elif ground_truth_annotation_dict['features']==[] and annotation_dict['features'] != 'NO_DISEASE':
-
-        return jsonify({"status": "fail", "iou": "there is no disease you choose a disease.", "diseaseScore": 0,
-                        "annotationAnomaly": annotation_dict['features'],
-                        "groundTruthAnomaly": ground_truth_anomaly})
+    annotation_dict = ast.literal_eval(data["annotation"])
+    annotation_info = {"user_id": data['user_id'], "input_id": data['input_id'],"ground_truth_anomaly":ground_truth_anomaly,
+                       "annotation": data["annotation"],"iou_score":0}
 
 
-    else:
-        annotation_anomaly = annotation_dict["features"][0]["properties"]["anomaly"]
-        print("Ground truth ", ground_truth_anomaly)
-        print("Annotated truth ", annotation_anomaly)
+    if ground_truth_dict["features"]==[]:
+        if annotation_dict["features"]==[]:
+            annotation_info["find_disease"] = True
+            annotation_info["iou_score"]=1
+            annotation.insert_one(annotation_info)
+            return jsonify({"status": "success", "iou": "there is no disease and you found it.",
+                            "diseaseScore": "NO_DISEASE"})
+
+        elif annotation_dict["features"]!=[]:
+            annotation_info["find_disease"] = False
+            annotation.insert_one(annotation_info)
+
+            return jsonify({"status": "fail", "iou": "there is no disease you choose a disease.", "diseaseScore": 0,
+                            "annotationAnomaly": annotation_dict['features'],
+                            "groundTruthAnomaly": ground_truth_anomaly})
 
 
-        if ground_truth_anomaly == annotation_anomaly:
+    elif ground_truth_dict["features"]!=[]:
 
-            poly_shape1 = ground_truth_annotation_dict["features"][0]['geometry']["coordinates"]  # picture coordinates
-            poly_shape2 = annotation_dict["features"][0]['geometry']["coordinates"]  # annotated part
-            print("Ground truth coordinates", poly_shape1[0])
-            print("Annotated coordinates", poly_shape2[0])
+        if annotation_dict["features"]==[]:
+            annotation_info["find_disease"] = False
+            annotation.insert_one(annotation_info)
+            return jsonify({"status": "fail", "iou": "there is a disease you choose no disease.", "diseaseScore": 0,
+                            "annotationAnomaly": annotation_dict['features'],
+                            "groundTruthAnomaly": ground_truth_anomaly})
 
-            result = compute_iou(poly_shape1[0], poly_shape2[0])
-            iou_score = linear_scale(result, 0, 1, 0, 10)
+        elif annotation_dict["features"]!=[]:
+            annotation_anomaly = annotation_dict["features"][0]["properties"]["anomaly"]
+            print("Ground truth ", ground_truth_anomaly)
+            print("Annotated truth ", annotation_anomaly)
+            if ground_truth_anomaly == annotation_anomaly:
+                find_disease=True
+                poly_shape1 = ground_truth_dict["features"][0]['geometry'][
+                    "coordinates"]  # picture coordinates
+                poly_shape2 = annotation_dict["features"][0]['geometry']["coordinates"]  # annotated part
+                print("Ground truth coordinates", poly_shape1[0])
+                print("Annotated coordinates", poly_shape2[0])
 
-            return jsonify({"status": "success", "iou": result, "diseaseScore": iou_score,
-                            "annotationAnomaly":annotation_anomaly,
-                            "groundTruthAnomaly":ground_truth_anomaly})
+                result = compute_iou(poly_shape1[0], poly_shape2[0])
+                iou_score = linear_scale(result, 0, 1, 0, 10)
+                annotation_info["find_disease"] = True
+                annotation_info["iou_score"]=iou_score
+                annotation.insert_one(annotation_info)
 
-        elif ground_truth_anomaly != annotation_anomaly:
+                return jsonify({"status": "success", "iou": result, "diseaseScore": iou_score,
+                                "annotationAnomaly": annotation_anomaly,
+                                "groundTruthAnomaly": ground_truth_anomaly})
 
-            return jsonify({"status": "fail", "iou": "you choose different disease", "diseaseScore":0,
-                            "annotationAnomaly":annotation_anomaly,
-                            "groundTruthAnomaly":ground_truth_anomaly})
+            elif ground_truth_anomaly != annotation_anomaly:
+                print("Ground truth coordinates", ground_truth_dict["features"][0]['geometry'][
+                    "coordinates"][0])
+                print("Annotated coordinates", annotation_dict["features"][0]['geometry']["coordinates"][0])
+                annotation_info["find_disease"] =False
+                annotation.insert_one(annotation_info)
+                return jsonify({"status": "fail", "iou": "you choose different disease", "diseaseScore": 0,
+                                "annotationAnomaly": annotation_anomaly,
+                                "groundTruthAnomaly": ground_truth_anomaly})
+
+
+
+
 
 
 if __name__ == "__main__":
