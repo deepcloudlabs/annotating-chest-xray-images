@@ -257,9 +257,9 @@ class AnnotationViewModel {
 
     retrieveAnnotations = (annotation = "{ \"features\": []}") => {
         this.anomalyLayers = {};
-//        for (let layer of this.drawnItems.getLayers()) {
-//            this.drawnItems.removeLayer(layer)
-//        }
+        for (let layer of this.drawnItems.getLayers()) {
+            this.drawnItems.removeLayer(layer)
+        }
         let geoJson = JSON.parse(annotation);
 
         for (let geoFeature of geoJson.features) {
@@ -292,27 +292,6 @@ class AnnotationViewModel {
             }
         }
 
-        for (let label of this.anomalies) {
-
-            if (label === "ALL") continue;
-            if (this.anomalyLayers[label]) {
-                for (let layer of this.anomalyLayers[label]) {
-                    this.drawnItems.addLayer(layer);
-                    layer.setStyle({
-                        weight: 8,
-                        color: this.anomalyColors[label],
-                        fillColor: this.anomalyColors[label]
-                    });
-                    layer.bindTooltip(label, {permanent: false, offset: [0, 0]});
-                }
-            }
-        }
-
-        return JSON.stringify(this.drawnItems.toGeoJSON());
-
-
-
-
     }
 
     evaluate = async () => {
@@ -326,7 +305,7 @@ class AnnotationViewModel {
                 body: JSON.stringify({
                     user_id: this.userId(),
                     input_id: this.xrayImageId(),
-                    annotation: this.retrieveAnnotations(),
+                    annotation: this.getGeoJson(),
 
                 })
             })
