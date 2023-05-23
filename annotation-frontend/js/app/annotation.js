@@ -147,33 +147,18 @@ class AnnotationViewModel {
        });
     }
 
-//    storeDailyScores=()=>{
-//    fetch(`${AppConfig.BASE_URL}/x-ray/dailyScores`,{
-//        method:"POST",
-//        body:JSON.stringify({
-//            userId: this.userId(),
-//            score:this.score()}),
-//        headers:{
-//            "Accept": "application/json",
-//            "Content-Type": "application/json"
-//        }
-//    })
-//    .then(res=>res.json())
-//    .then(res=>{
-//    toastr.success('Score are stored.')});
-//    }
 
 
 
     loadRandomXrayImage = async () => {
         this.groundTruthAnomaly("Not available");
         this.annotationAnomaly("Not available");
-
         this.xrayImageLoaded(false);
         fetch(`${AppConfig.BASE_URL}/x-ray/images`)
             .then(res => res.json())
             .then(res => {
                 res.image = toSrcImage(res.image);
+                console.log(typeof res.image);
                 this.xrayImageLoaded(true);
                 this.loadFile(res.image)
                     .then(next => {
@@ -412,6 +397,8 @@ class AnnotationViewModel {
                 toastr.error(error);
             });
     }
+
+
 
     uploadFeedback = () => {
         fetch(`${AppConfig.BASE_URL}/feedbacks/${this.file_upload.input_id}`, {
