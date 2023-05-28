@@ -148,7 +148,19 @@ class AnnotationViewModel {
     }
 
 
-
+//    showImages=()=>{
+//    console.log("hi");
+//        fetch(`${AppConfig.BASE_URL}/x-ray/images`).
+//        then(res=>res.json())
+//        .then(res=>{
+//            res.image=toSrcImage(res.image);
+//            this.loadFile(res.image)
+//            .then(next=>{
+//                toastr.success(`image show`);
+//            });
+//
+//        });
+//    }
 
     loadRandomXrayImage = async () => {
         this.groundTruthAnomaly("Not available");
@@ -158,7 +170,7 @@ class AnnotationViewModel {
             .then(res => res.json())
             .then(res => {
                 res.image = toSrcImage(res.image);
-                console.log(typeof res.image);
+
                 this.xrayImageLoaded(true);
                 this.loadFile(res.image)
                     .then(next => {
@@ -320,12 +332,13 @@ class AnnotationViewModel {
                     console.log("success annotation ",this.annotationAnomaly());
                 }
             })
-
-
-            .catch((error) => {
+           .catch((error) => {
                 toastr.error(error);
             });
-
+            this.showReport();
+    }
+    showReport=()=>{
+        window.location.href = "report.html";
     }
 
     getGeoJson = () =>{
@@ -397,7 +410,6 @@ class AnnotationViewModel {
                 toastr.error(error);
             });
     }
-
 
 
     uploadFeedback = () => {

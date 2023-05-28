@@ -3,6 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Annotation Report</title>
+    <style>
+        @import url("css/bootstrap.min.css");
+        @import url("css/leaflet.css");
+        @import url("css/leaflet.draw.css");
+        @import url("css/toastr.css");
+        @import url("css/app.css");
+    </style>
 
 
 </head>
@@ -16,27 +23,23 @@
                     <div class="row">
                         <div class="col-xl-6 col-xxl-5">
                             <div class="form-group">
-                                <button class="btn-lg btn-success" data-bind="showImages ,visible: userRole() === 'Student'">See Ground Truth and Your Annotations
-
+                                <button class="btn-lg btn-success" data-bind="click: showImages,
+                                visible: userRole() === 'Student'">See Ground Truth and Your Annotations
                                 </button>
 
-
-
-
-
-
-
+                        </div>
+                    </div>
+               </div>
+                    <div class="card" data-bind="visible: xrayImageLoaded"
+                             style="margin-left: auto; margin-right: auto;width: fit-content;height: fit-content;">
+                                                   <div class="card-body">
+                                <div id="picture" class="form-group">
+                                    <div id="inputImageDiv" style="margin-left: auto; margin-right: auto;"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-
-
-
-
-
-               </div>
-            </main>
+          </main>
         </div>
     </div>
 </body>
